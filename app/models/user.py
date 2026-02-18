@@ -4,7 +4,7 @@ import enum
 
 
 from typing import TYPE_CHECKING
-from app.core.database import Base
+from core.database import Base
 
 if TYPE_CHECKING:
     from app.models.request import Request

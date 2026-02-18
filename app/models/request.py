@@ -5,7 +5,7 @@ import enum
 from datetime import datetime
 from typing import Optional, TYPE_CHECKING
 
-from app.core.database import Base
+from core.database import Base
 
 if TYPE_CHECKING:
     from app.models.user import User
