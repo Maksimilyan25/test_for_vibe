@@ -103,6 +103,8 @@ URL: http://localhost:3000
 
 Название: test_take_to_work_race_same_master
 
+Запуск: docker-compose exec backend pytest tests/test_race_conditions.py::test_take_to_work_race_same_master -v -s
+
 Что проверяет:
 Действие "Взять в работу" должно быть безопасным при параллельных запросах. Если два запроса приходят одновременно, заявка не должна "сломаться".
 
@@ -142,4 +144,4 @@ docker-compose exec backend pytest tests/test_race_conditions.py -v -s
 
 ## Запуск всех тестов
 
-pytest tests/
+docker-compose exec backend pytest
