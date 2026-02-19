@@ -17,11 +17,22 @@
 2. Перейти в директорию проекта
    cd test_for_vibe
 
-3. Создать файл окружения
-   Создать файл .env в корне проекта
+3. Скопировать пример файла окружения
+   cp .env.example .env
 
-4. Добавить переменные окружения
-   DATABASE_URL=postgresql+asyncpg://test_for_vibe:Fidafo2611@db:5432/db_for_vibe
+   PostgreSQL (укажите свои значения)
+   POSTGRES_USER=your_db_user
+   POSTGRES_PASSWORD=your_db_password
+   POSTGRES_DB=your_db_name
+
+   Backend
+   SECRET_KEY=your_secret_key_here
+   ACCESS_TOKEN_EXPIRE_MINUTES=30
+
+4. Сгенерировать секретный ключ для backend
+   openssl rand -hex 32
+   
+   Полученный ключ вставьте в файл .env вместо your_secret_key_here
 
 5. Запустить контейнеры
    docker-compose up --build
