@@ -8,7 +8,7 @@ from typing import Optional, TYPE_CHECKING
 from core.database import Base
 
 if TYPE_CHECKING:
-    from app.models.user import User
+    from models.user import User
 
 
 class RequestStatus(str, enum.Enum):

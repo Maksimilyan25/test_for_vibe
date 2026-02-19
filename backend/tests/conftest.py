@@ -1,7 +1,8 @@
+# tests/conftest.py (дополнение)
 import pytest
 import pytest_asyncio
 import asyncio
-from typing import AsyncGenerator
+from typing import AsyncGenerator, Dict
 from httpx import AsyncClient, ASGITransport
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
 from sqlalchemy.pool import NullPool
@@ -9,6 +10,10 @@ from sqlalchemy.pool import NullPool
 from main import app
 from core.database import Base, get_db
 from core.config import settings
+from core.security import create_access_token
+from models.user import User, UserRole
+from services.user_service import UserService
+from schemas.user import UserCreate
 
 # Используем test database
 TEST_DATABASE_URL = "sqlite+aiosqlite:///./test.db"
@@ -48,7 +53,6 @@ async def setup_database():
         await conn.run_sync(Base.metadata.drop_all)
         await conn.run_sync(Base.metadata.create_all)
     yield
-    # Не удаляем после теста, чтобы можно было увидеть данные при отладке
     # База будет очищена перед следующим тестом
 
 
@@ -69,3 +73,118 @@ async def db_session() -> AsyncGenerator[AsyncSession, None]:
         yield session
         await session.rollback()
         await session.close()
+
+
+# ============= ФИКСТУРЫ ДЛЯ ПОЛЬЗОВАТЕЛЕЙ =============
+
+
+@pytest_asyncio.fixture
+async def dispatcher_user(db_session: AsyncSession) -> User:
+    """Создание тестового диспетчера через сервис"""
+    user_service = UserService(db_session)
+    user_create = UserCreate(
+        username="test_dispatcher",
+        full_name="Тестовый Диспетчер",
+        password="dispatcher123",
+        role=UserRole.DISPATCHER,
+    )
+    user = await user_service.create_user(user_create)
+    return user
+
+
+@pytest_asyncio.fixture
+async def master_user(db_session: AsyncSession) -> User:
+    """Создание тестового мастера через сервис"""
+    user_service = UserService(db_session)
+    user_create = UserCreate(
+        username="test_master",
+        full_name="Тестовый Мастер",
+        password="master123",
+        role=UserRole.MASTER,
+    )
+    user = await user_service.create_user(user_create)
+    return user
+
+
+@pytest_asyncio.fixture
+async def second_master_user(db_session: AsyncSession) -> User:
+    """Создание второго тестового мастера через сервис"""
+    user_service = UserService(db_session)
+    user_create = UserCreate(
+        username="test_master2",
+        full_name="Тестовый Мастер 2",
+        password="master123",
+        role=UserRole.MASTER,
+    )
+    user = await user_service.create_user(user_create)
+    return user
+
+
+# ============= ФИКСТУРЫ ДЛЯ ТОКЕНОВ И ЗАГОЛОВКОВ =============
+
+
+@pytest.fixture
+def dispatcher_token(dispatcher_user: User) -> str:
+    """Создание токена для диспетчера"""
+    return create_access_token(data={"sub": dispatcher_user.username})
+
+
+@pytest.fixture
+def master_token(master_user: User) -> str:
+    """Создание токена для мастера"""
+    return create_access_token(data={"sub": master_user.username})
+
+
+@pytest.fixture
+def second_master_token(second_master_user: User) -> str:
+    """Создание токена для второго мастера"""
+    return create_access_token(data={"sub": second_master_user.username})
+
+
+@pytest.fixture
+def dispatcher_headers(dispatcher_token: str) -> Dict[str, str]:
+    """Заголовки с токеном диспетчера"""
+    return {"Authorization": f"Bearer {dispatcher_token}"}
+
+
+@pytest.fixture
+def master_headers(master_token: str) -> Dict[str, str]:
+    """Заголовки с токеном мастера"""
+    return {"Authorization": f"Bearer {master_token}"}
+
+
+@pytest.fixture
+def second_master_headers(second_master_token: str) -> Dict[str, str]:
+    """Заголовки с токеном второго мастера"""
+    return {"Authorization": f"Bearer {second_master_token}"}
+
+
+# ============= ФИКСТУРЫ ДЛЯ ТЕСТОВЫХ ДАННЫХ =============
+
+
+@pytest.fixture
+def valid_request_data() -> Dict[str, str]:
+    """Валидные данные для создания заявки"""
+    return {
+        "client_name": "Иван Петров",
+        "phone": "+7 (999) 123-45-67",
+        "address": "ул. Ленина, д. 10, кв. 5",
+        "problem_text": "Не работает стиральная машина",
+    }
+
+
+@pytest.fixture
+def another_request_data() -> Dict[str, str]:
+    """Другие валидные данные для создания заявки"""
+    return {
+        "client_name": "Мария Сидорова",
+        "phone": "+7 (999) 765-43-21",
+        "address": "ул. Гагарина, д. 15, кв. 42",
+        "problem_text": "Течет кран на кухне",
+    }
+
+
+@pytest.fixture
+def invalid_request_data() -> Dict[str, str]:
+    """Невалидные данные для создания заявки (пустые поля)"""
+    return {"client_name": "", "phone": "", "address": "", "problem_text": ""}

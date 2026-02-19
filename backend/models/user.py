@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING
 from core.database import Base
 
 if TYPE_CHECKING:
-    from app.models.request import Request
+    from models.request import Request
 
 
 class UserRole(str, enum.Enum):

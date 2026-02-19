@@ -1,0 +1,74 @@
+exclude: '^(docs|tests|migrations|benchmarks|notebooks)/'
+default_stages: [pre-commit]
+
+repos:
+  # Базовые утилиты от pre-commit
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.4.0
+    hooks:
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+        exclude: '\.md$'
+      - id: check-yaml
+      - id: check-json
+      - id: check-added-large-files
+        args: ['--maxkb=500']
+      - id: debug-statements
+      - id: check-ast
+      - id: check-case-conflict
+      - id: check-merge-conflict
+
+  # Black — автоформатирование кода
+  - repo: https://github.com/psf/black
+    rev: 23.11.0
+    hooks:
+      - id: black
+        language_version: python3.12
+        args: ["--line-length=88"]
+        files: '^src/'
+
+  # isort — сортировка импортов
+  - repo: https://github.com/PyCQA/isort
+    rev: 5.12.0
+    hooks:
+      - id: isort
+        args: ["--profile", "black", "--line-length=88"]
+        files: '^src/'
+
+  # flake8 — линтер кода (НАСТРОЕННЫЙ)
+  - repo: https://github.com/PyCQA/flake8
+    rev: 6.1.0
+    hooks:
+      - id: flake8
+        additional_dependencies:
+          - flake8-bugbear
+          - flake8-comprehensions
+          - flake8-simplify
+        args: [
+          "--max-line-length=88",
+          "--extend-ignore=E501,F401,E266,F841,B008,SIM102,SIM910,F821",
+          "--exclude=src/communities/models.py"
+        ]
+        files: '^src/'
+        language_version: python3.12
+
+  # pyupgrade — обновление синтаксиса
+  - repo: https://github.com/asottile/pyupgrade
+    rev: v3.15.0
+    hooks:
+      - id: pyupgrade
+        args: ["--py312-plus"]
+        files: '^src/'
+
+  # mypy — проверка типов (ВРЕМЕННО ОТКЛЮЧЕН)
+  # - repo: https://github.com/pre-commit/mirrors-mypy
+  #   rev: v1.8.0
+  #   hooks:
+  #     - id: mypy
+  #       additional_dependencies: []
+  #       files: '^src/'
+  #       args: [
+  #         "--ignore-missing-imports",
+  #         "--disallow-untyped-defs",
+  #         "--warn-unused-ignores"
+  #       ]
