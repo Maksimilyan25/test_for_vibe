@@ -1,4 +1,5 @@
 import asyncio
+import os
 import sys
 from logging.config import fileConfig
 from pathlib import Path
@@ -15,6 +16,11 @@ from models.request import Request
 from models.user import User
 
 config = context.config
+
+# Заменяем URL на значение из переменной окружения DATABASE_URL
+database_url = os.getenv("DATABASE_URL")
+if database_url:
+    config.set_main_option("sqlalchemy.url", database_url)
 
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
