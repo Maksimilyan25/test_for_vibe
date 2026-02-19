@@ -24,3 +24,10 @@ class UnauthorizedException(HTTPException):
             detail=detail,
             headers={"WWW-Authenticate": "Bearer"},
         )
+
+
+class ConflictException(HTTPException):
+    """409 Conflict - для race conditions"""
+
+    def __init__(self, detail: str = "Конфликт при обновлении ресурса"):
+        super().__init__(status_code=status.HTTP_409_CONFLICT, detail=detail)

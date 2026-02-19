@@ -1,13 +1,11 @@
-// Динамический URL бэка (берет хост и порт из текущего окна)
+// Динамический URL бэка
 const API_PORT = process.env.REACT_APP_API_PORT || window.location.port || 8000;
 const API_URL = `http://${window.location.hostname}:${API_PORT}/api/v1`;
 
-// Сохраняем токен
 const setToken = (token) => localStorage.setItem('token', token);
 const getToken = () => localStorage.getItem('token');
 const removeToken = () => localStorage.removeItem('token');
 
-// Базовые заголовки
 const getHeaders = (isFormData = false) => {
     const headers = {};
     if (!isFormData) {
@@ -19,7 +17,6 @@ const getHeaders = (isFormData = false) => {
     return headers;
 };
 
-// Утилита для запросов
 async function request(url, options = {}) {
     const response = await fetch(`${API_URL}${url}`, {
         ...options,
@@ -35,9 +32,7 @@ async function request(url, options = {}) {
     return data;
 }
 
-// API функции
 export const api = {
-    // Регистрация
     async register(userData) {
         const response = await fetch(`${API_URL}/auth/register`, {
             method: 'POST',
@@ -54,7 +49,6 @@ export const api = {
         return data;
     },
 
-    // Вход
     async login(username, password) {
         const formData = new URLSearchParams();
         formData.append('username', username);
@@ -76,7 +70,6 @@ export const api = {
         return data;
     },
 
-    // Получить текущего пользователя
     async getMe() {
         const response = await fetch(`${API_URL}/auth/me`, {
             headers: getHeaders()
@@ -92,23 +85,37 @@ export const api = {
         return data;
     },
 
-    // Выход
     logout() {
         removeToken();
     },
 
-    // Проверка авторизации
     isAuthenticated() {
         return !!getToken();
     },
 
-    // Получить токен
     getToken
 };
 
-// API для заявок (диспетчер)
+// Публичное API (без авторизации)
+export const publicApi = {
+    async createRequest(data) {
+        const response = await fetch(`${API_URL}/requests`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+            throw new Error(result.detail || 'Ошибка создания заявки');
+        }
+
+        return result;
+    }
+};
+
 export const requestsApi = {
-    // Создать заявку
     async create(data) {
         return request('/requests', {
             method: 'POST',
@@ -116,18 +123,15 @@ export const requestsApi = {
         });
     },
 
-    // Получить список заявок
     async getList(params = {}) {
         const query = new URLSearchParams(params).toString();
         return request(`/requests?${query}`);
     },
 
-    // Получить заявку по ID
     async getById(id) {
         return request(`/requests/${id}`);
     },
 
-    // Назначить мастера
     async assignMaster(requestId, masterId) {
         return request(`/requests/${requestId}/assign`, {
             method: 'POST',
@@ -135,47 +139,39 @@ export const requestsApi = {
         });
     },
 
-    // Отменить заявку
     async cancel(requestId) {
         return request(`/requests/${requestId}/cancel`, {
             method: 'POST'
         });
     },
 
-    // Получить список мастеров
     async getMasters() {
         return request('/requests/masters/available');
     }
 };
 
-// API для мастера
 export const masterApi = {
-    // Получить мои заявки
     async getMyRequests(params = {}) {
         const query = new URLSearchParams(params).toString();
         return request(`/master/requests?${query}`);
     },
 
-    // Взять в работу
     async takeToWork(requestId) {
         return request(`/master/requests/${requestId}/take`, {
             method: 'POST'
         });
     },
 
-    // Завершить
     async complete(requestId) {
         return request(`/master/requests/${requestId}/complete`, {
             method: 'POST'
         });
     },
 
-    // Получить детали заявки
     async getById(requestId) {
         return request(`/master/requests/${requestId}`);
     },
 
-    // Получить статистику
     async getStats() {
         return request('/master/stats');
     }

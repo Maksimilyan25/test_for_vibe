@@ -38,7 +38,7 @@ const MasterPanel = () => {
         try {
             const params = {};
             if (filters.status) params.status = filters.status;
-            
+
             const data = await masterApi.getMyRequests(params);
             setRequests(data);
         } catch (error) {
@@ -135,8 +135,8 @@ const MasterPanel = () => {
 
             {/* Фильтры */}
             <div className="filters">
-                <select 
-                    value={filters.status} 
+                <select
+                    value={filters.status}
                     onChange={(e) => setFilters({...filters, status: e.target.value})}
                 >
                     <option value="">Все статусы</option>
@@ -159,14 +159,14 @@ const MasterPanel = () => {
                         <div key={request.id} className="request-card">
                             <div className="request-header">
                                 <span className="request-id">#{request.id}</span>
-                                <span 
+                                <span
                                     className="request-status"
                                     style={{ backgroundColor: getStatusColor(request.status) }}
                                 >
                                     {getStatusText(request.status)}
                                 </span>
                             </div>
-                            
+
                             <div className="request-body">
                                 <p><strong>Клиент:</strong> {request.client_name}</p>
                                 <p><strong>Телефон:</strong> {request.phone}</p>
@@ -175,7 +175,7 @@ const MasterPanel = () => {
                             </div>
 
                             <div className="request-actions">
-                                <button 
+                                <button
                                     className="details-btn"
                                     onClick={() => handleViewDetails(request.id)}
                                 >
@@ -183,7 +183,7 @@ const MasterPanel = () => {
                                 </button>
 
                                 {request.status === 'assigned' && (
-                                    <button 
+                                    <button
                                         className="take-btn"
                                         onClick={() => handleTakeToWork(request.id)}
                                     >
@@ -192,7 +192,7 @@ const MasterPanel = () => {
                                 )}
 
                                 {request.status === 'in_progress' && (
-                                    <button 
+                                    <button
                                         className="complete-btn"
                                         onClick={() => handleComplete(request.id)}
                                     >
@@ -210,7 +210,7 @@ const MasterPanel = () => {
                 <div className="modal-overlay" onClick={() => setSelectedRequest(null)}>
                     <div className="modal-content" onClick={e => e.stopPropagation()}>
                         <h3>Заявка #{selectedRequest.id}</h3>
-                        
+
                         <div className="details-body">
                             <p><strong>Статус:</strong> {getStatusText(selectedRequest.status)}</p>
                             <p><strong>Клиент:</strong> {selectedRequest.client_name}</p>

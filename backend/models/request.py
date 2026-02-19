@@ -3,7 +3,7 @@ from datetime import datetime
 from typing import TYPE_CHECKING, Optional
 
 from core.database import Base
-from sqlalchemy import DateTime, Enum, ForeignKey, Integer, String, Text
+from sqlalchemy import BigInteger, DateTime, Enum, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
 
@@ -24,7 +24,7 @@ class Request(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     client_name: Mapped[str] = mapped_column(String(100), nullable=False)
-    phone: Mapped[str] = mapped_column(String(20), nullable=False)
+    phone: Mapped[int] = mapped_column(BigInteger, nullable=False)
     address: Mapped[str] = mapped_column(String(200), nullable=False)
     problem_text: Mapped[str] = mapped_column(Text, nullable=False)
     status: Mapped[RequestStatus] = mapped_column(

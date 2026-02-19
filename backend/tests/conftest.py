@@ -163,24 +163,35 @@ def second_master_headers(second_master_token: str) -> Dict[str, str]:
 
 
 @pytest.fixture
-def valid_request_data() -> Dict[str, str]:
-    """Валидные данные для создания заявки"""
+def valid_request_data() -> Dict:
+    """Валидные данные для создания заявки (телефон как число)"""
     return {
         "client_name": "Иван Петров",
-        "phone": "+7 (999) 123-45-67",
+        "phone": 79991234567,  # Число, а не строка
         "address": "ул. Ленина, д. 10, кв. 5",
         "problem_text": "Не работает стиральная машина",
     }
 
 
 @pytest.fixture
-def another_request_data() -> Dict[str, str]:
-    """Другие валидные данные для создания заявки"""
+def another_request_data() -> Dict:
+    """Другие валидные данные для создания заявки (телефон как число)"""
     return {
         "client_name": "Мария Сидорова",
-        "phone": "+7 (999) 765-43-21",
+        "phone": 79876543210,  # Число, а не строка
         "address": "ул. Гагарина, д. 15, кв. 42",
         "problem_text": "Течет кран на кухне",
+    }
+
+
+@pytest.fixture
+def valid_request_data_str() -> Dict[str, str]:
+    """Валидные данные с телефоном как строка (для тестов преобразования)"""
+    return {
+        "client_name": "Иван Петров",
+        "phone": "79991234567",  # Строка цифр
+        "address": "ул. Ленина, д. 10, кв. 5",
+        "problem_text": "Не работает стиральная машина",
     }
 
 
@@ -188,3 +199,15 @@ def another_request_data() -> Dict[str, str]:
 def invalid_request_data() -> Dict[str, str]:
     """Невалидные данные для создания заявки (пустые поля)"""
     return {"client_name": "", "phone": "", "address": "", "problem_text": ""}
+
+
+@pytest.fixture
+def invalid_phone_data() -> list:
+    """Набор невалидных телефонов для тестирования"""
+    return [
+        "abc123",  # буквы
+        "123",  # слишком короткий
+        "12345678901234567890",  # слишком длинный
+        -1234567890,  # отрицательное число
+        "+7 (999) 123-45-67",  # с форматированием
+    ]

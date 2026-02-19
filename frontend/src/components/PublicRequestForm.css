@@ -1,0 +1,360 @@
+.public-form {
+    background: white;
+    border-radius: 20px;
+    padding: 40px;
+    max-width: 500px;
+    margin: 40px auto;
+    box-shadow: 0 20px 60px rgba(102, 126, 234, 0.25);
+    position: relative;
+    animation: fadeInUp 0.6s ease;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(10px);
+}
+
+.public-form h2 {
+    text-align: center;
+    color: #333;
+    margin-bottom: 30px;
+    font-size: 2rem;
+    font-weight: 600;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.form-group {
+    margin-bottom: 20px;
+    position: relative;
+}
+
+.form-group.has-error {
+    margin-bottom: 30px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    color: #555;
+    font-weight: 600;
+    font-size: 0.95rem;
+    letter-spacing: 0.5px;
+}
+
+.form-group input,
+.form-group textarea {
+    width: 100%;
+    padding: 12px 15px;
+    border: 2px solid #e0e0e0;
+    border-radius: 12px;
+    font-size: 16px;
+    transition: all 0.3s ease;
+    background: #f8f9fa;
+}
+
+.form-group input.error,
+.form-group textarea.error {
+    border-color: #dc3545;
+    background: #fff8f8;
+}
+
+.form-group input:focus,
+.form-group textarea:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+    background: white;
+}
+
+.form-group input.error:focus,
+.form-group textarea.error:focus {
+    border-color: #dc3545;
+    box-shadow: 0 0 0 4px rgba(220, 53, 69, 0.1);
+}
+
+.form-group input:hover,
+.form-group textarea:hover {
+    border-color: #764ba2;
+}
+
+.hint {
+    display: block;
+    margin-top: 5px;
+    color: #999;
+    font-size: 12px;
+    font-style: italic;
+}
+
+.field-error {
+    position: absolute;
+    bottom: -20px;
+    left: 0;
+    color: #dc3545;
+    font-size: 12px;
+    font-weight: 500;
+    animation: slideDown 0.3s ease;
+}
+
+.public-form button[type="submit"] {
+    width: 100%;
+    padding: 14px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-size: 18px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+    letter-spacing: 1px;
+    margin-top: 20px;
+}
+
+.public-form button[type="submit"]:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.6);
+}
+
+.public-form button[type="submit"]:disabled {
+    background: linear-gradient(135deg, #a0a0a0 0%, #808080 100%);
+    transform: none;
+    box-shadow: none;
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+.error-message {
+    background: linear-gradient(135deg, #ff6b6b, #ff4757);
+    color: white;
+    padding: 15px 20px;
+    border-radius: 12px;
+    margin-bottom: 25px;
+    text-align: center;
+    font-weight: 500;
+    animation: shake 0.5s ease;
+    box-shadow: 0 4px 15px rgba(255, 71, 87, 0.3);
+    position: relative;
+    overflow: hidden;
+}
+
+.error-message::before {
+    content: '⚠';
+    position: absolute;
+    left: 15px;
+    font-size: 20px;
+    opacity: 0.5;
+}
+
+.error-message strong {
+    margin-right: 5px;
+}
+
+/* Стили для экрана успеха */
+.success-screen {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 70vh;
+    padding: 20px;
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+}
+
+.success-card {
+    background: white;
+    border-radius: 30px;
+    padding: 50px;
+    max-width: 500px;
+    width: 100%;
+    text-align: center;
+    box-shadow: 0 30px 60px rgba(102, 126, 234, 0.3);
+    animation: scaleIn 0.6s ease-out;
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    backdrop-filter: blur(10px);
+}
+
+.success-icon {
+    width: 100px;
+    height: 100px;
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 50px;
+    font-weight: bold;
+    margin: 0 auto 30px;
+    animation: pulse 2s infinite;
+    box-shadow: 0 10px 30px rgba(40, 167, 69, 0.4);
+}
+
+.success-card h2 {
+    color: #333;
+    margin-bottom: 20px;
+    font-size: 32px;
+    font-weight: 700;
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.success-card p {
+    color: #666;
+    font-size: 18px;
+    line-height: 1.6;
+    margin-bottom: 15px;
+}
+
+.redirect-info {
+    color: #999;
+    font-size: 15px;
+    margin: 25px 0;
+    font-style: italic;
+    background: #f8f9fa;
+    padding: 10px 20px;
+    border-radius: 50px;
+    display: inline-block;
+}
+
+.home-button {
+    padding: 14px 40px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    border-radius: 50px;
+    font-size: 18px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+    letter-spacing: 1px;
+    margin-top: 20px;
+}
+
+.home-button:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.6);
+}
+
+/* Анимации */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes scaleIn {
+    from {
+        transform: scale(0.9);
+        opacity: 0;
+    }
+
+    to {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+        box-shadow: 0 10px 30px rgba(40, 167, 69, 0.4);
+    }
+
+    50% {
+        transform: scale(1.05);
+        box-shadow: 0 15px 40px rgba(40, 167, 69, 0.6);
+    }
+
+    100% {
+        transform: scale(1);
+        box-shadow: 0 10px 30px rgba(40, 167, 69, 0.4);
+    }
+}
+
+@keyframes shake {
+
+    0%,
+    100% {
+        transform: translateX(0);
+    }
+
+    10%,
+    30%,
+    50%,
+    70%,
+    90% {
+        transform: translateX(-5px);
+    }
+
+    20%,
+    40%,
+    60%,
+    80% {
+        transform: translateX(5px);
+    }
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+    .public-form {
+        padding: 25px;
+        margin: 20px;
+    }
+
+    .public-form h2 {
+        font-size: 1.8rem;
+    }
+
+    .success-card {
+        padding: 30px 20px;
+    }
+
+    .success-icon {
+        width: 80px;
+        height: 80px;
+        font-size: 40px;
+    }
+
+    .success-card h2 {
+        font-size: 26px;
+    }
+
+    .success-card p {
+        font-size: 16px;
+    }
+
+    .home-button {
+        padding: 12px 30px;
+        font-size: 16px;
+    }
+
+    .form-group.has-error {
+        margin-bottom: 25px;
+    }
+
+    .field-error {
+        font-size: 11px;
+        bottom: -18px;
+    }
+}

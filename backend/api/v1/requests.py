@@ -1,9 +1,9 @@
-from typing import List, Optional
+from typing import Optional
 
 from api.dependencies import get_current_dispatcher, get_current_user
 from core.database import get_db
-from fastapi import APIRouter, Depends, HTTPException, Query, status
-from models.user import User, UserRole
+from fastapi import APIRouter, Depends, Query, status
+from models.user import User
 from schemas.request import (
     RequestActionAssign,
     RequestCreate,
@@ -23,16 +23,14 @@ router = APIRouter(prefix="/requests", tags=["Заявки"])
     response_model=RequestInDB,
     status_code=status.HTTP_201_CREATED,
     summary="Создать заявку",
-    description="Создание новой заявки. Доступно только диспетчеру.",
+    description="Создание новой заявки. Доступно всем (публичный эндпоинт).",
 )
 async def create_request(
     request_data: RequestCreate,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_dispatcher),
 ):
-    """Создание новой заявки (только диспетчер)"""
     service = RequestService(db)
-    request = await service.create_request(request_data, current_user)
+    request = await service.create_request(request_data, None)
     return request
 
 
@@ -56,10 +54,8 @@ async def get_requests(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """Получение списка заявок"""
     service = RequestService(db)
 
-    # Преобразуем статус в enum
     status_enum = None
     if status:
         from models.request import RequestStatus
@@ -72,7 +68,6 @@ async def get_requests(
 
     requests, total = await service.get_requests(filters, current_user)
 
-    # Обогащаем данными о мастере
     result = []
     for req in requests:
         req_dict = {
@@ -107,7 +102,6 @@ async def get_request(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """Получение заявки по ID"""
     service = RequestService(db)
     request = await service.get_request(request_id, current_user)
 
@@ -142,7 +136,6 @@ async def assign_master(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_dispatcher),
 ):
-    """Назначить мастера на заявку"""
     service = RequestService(db)
     request = await service.assign_master(
         request_id, assign_data.master_id, current_user
@@ -161,7 +154,6 @@ async def cancel_request(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """Отменить заявку"""
     service = RequestService(db)
     request = await service.cancel_request(request_id, current_user)
     return request
@@ -177,7 +169,6 @@ async def get_available_masters(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_dispatcher),
 ):
-    """Получить список всех мастеров"""
     service = RequestService(db)
     masters = await service.get_available_masters(current_user)
     return masters

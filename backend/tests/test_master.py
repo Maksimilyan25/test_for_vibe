@@ -2,8 +2,8 @@
 import pytest
 from httpx import AsyncClient
 from models.request import Request, RequestStatus
-from models.user import User, UserRole
-from sqlalchemy import func, select
+from models.user import User
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 
@@ -25,9 +25,7 @@ class TestMasterRequests:
     ):
         """Успешное получение списка своих заявок"""
         # Создаем заявку и назначаем на первого мастера
-        resp1 = await client.post(
-            "/api/v1/requests/", json=valid_request_data, headers=dispatcher_headers
-        )
+        resp1 = await client.post("/api/v1/requests/", json=valid_request_data)
         req1_id = resp1.json()["id"]
         await client.post(
             f"/api/v1/requests/{req1_id}/assign",
@@ -36,9 +34,7 @@ class TestMasterRequests:
         )
 
         # Создаем заявку и назначаем на второго мастера
-        resp2 = await client.post(
-            "/api/v1/requests/", json=another_request_data, headers=dispatcher_headers
-        )
+        resp2 = await client.post("/api/v1/requests/", json=another_request_data)
         req2_id = resp2.json()["id"]
         await client.post(
             f"/api/v1/requests/{req2_id}/assign",
@@ -46,7 +42,6 @@ class TestMasterRequests:
             headers=dispatcher_headers,
         )
 
-        # Получаем список заявок первого мастера
         response = await client.get("/api/v1/master/requests", headers=master_headers)
 
         assert response.status_code == 200
@@ -64,10 +59,7 @@ class TestMasterRequests:
         valid_request_data: dict,
     ):
         """Фильтрация своих заявок по статусу"""
-        # Создаем две заявки
-        resp1 = await client.post(
-            "/api/v1/requests/", json=valid_request_data, headers=dispatcher_headers
-        )
+        resp1 = await client.post("/api/v1/requests/", json=valid_request_data)
         req1_id = resp1.json()["id"]
         await client.post(
             f"/api/v1/requests/{req1_id}/assign",
@@ -75,9 +67,7 @@ class TestMasterRequests:
             headers=dispatcher_headers,
         )
 
-        resp2 = await client.post(
-            "/api/v1/requests/", json=valid_request_data, headers=dispatcher_headers
-        )
+        resp2 = await client.post("/api/v1/requests/", json=valid_request_data)
         req2_id = resp2.json()["id"]
         await client.post(
             f"/api/v1/requests/{req2_id}/assign",
@@ -85,12 +75,10 @@ class TestMasterRequests:
             headers=dispatcher_headers,
         )
 
-        # Первую берем в работу
         await client.post(
             f"/api/v1/master/requests/{req1_id}/take", headers=master_headers
         )
 
-        # Фильтр по статусу assigned
         response = await client.get(
             "/api/v1/master/requests?status=assigned", headers=master_headers
         )
@@ -99,7 +87,6 @@ class TestMasterRequests:
         assert len(data) == 1
         assert data[0]["status"] == "assigned"
 
-        # Фильтр по статусу in_progress
         response = await client.get(
             "/api/v1/master/requests?status=in_progress", headers=master_headers
         )
@@ -109,13 +96,9 @@ class TestMasterRequests:
         assert data[0]["status"] == "in_progress"
 
     async def test_get_my_requests_empty_list(
-        self,
-        client: AsyncClient,
-        master_headers: dict,
+        self, client: AsyncClient, master_headers: dict
     ):
-        """Пустой список заявок у мастера"""
         response = await client.get("/api/v1/master/requests", headers=master_headers)
-
         assert response.status_code == 200
         data = response.json()
         assert data == []
@@ -128,12 +111,8 @@ class TestMasterRequests:
         dispatcher_headers: dict,
         valid_request_data: dict,
     ):
-        """Пагинация списка своих заявок"""
-        # Создаем 3 заявки
         for i in range(3):
-            resp = await client.post(
-                "/api/v1/requests/", json=valid_request_data, headers=dispatcher_headers
-            )
+            resp = await client.post("/api/v1/requests/", json=valid_request_data)
             req_id = resp.json()["id"]
             await client.post(
                 f"/api/v1/requests/{req_id}/assign",
@@ -141,7 +120,6 @@ class TestMasterRequests:
                 headers=dispatcher_headers,
             )
 
-        # Получаем с skip=1, limit=1
         response = await client.get(
             "/api/v1/master/requests?skip=1&limit=1", headers=master_headers
         )
@@ -161,11 +139,7 @@ class TestMasterRequests:
         valid_request_data: dict,
         db_session: AsyncSession,
     ):
-        """Успешное взятие заявки в работу"""
-        # Создаем и назначаем заявку
-        create_resp = await client.post(
-            "/api/v1/requests/", json=valid_request_data, headers=dispatcher_headers
-        )
+        create_resp = await client.post("/api/v1/requests/", json=valid_request_data)
         request_id = create_resp.json()["id"]
         await client.post(
             f"/api/v1/requests/{request_id}/assign",
@@ -173,7 +147,6 @@ class TestMasterRequests:
             headers=dispatcher_headers,
         )
 
-        # Берем в работу
         response = await client.post(
             f"/api/v1/master/requests/{request_id}/take", headers=master_headers
         )
@@ -182,7 +155,6 @@ class TestMasterRequests:
         data = response.json()
         assert data["status"] == "in_progress"
 
-        # Проверяем в БД
         result = await db_session.execute(
             select(Request).where(Request.id == request_id)
         )
@@ -197,11 +169,7 @@ class TestMasterRequests:
         dispatcher_headers: dict,
         valid_request_data: dict,
     ):
-        """Нельзя взять в работу чужую заявку"""
-        # Создаем и назначаем на второго мастера
-        create_resp = await client.post(
-            "/api/v1/requests/", json=valid_request_data, headers=dispatcher_headers
-        )
+        create_resp = await client.post("/api/v1/requests/", json=valid_request_data)
         request_id = create_resp.json()["id"]
         await client.post(
             f"/api/v1/requests/{request_id}/assign",
@@ -209,12 +177,11 @@ class TestMasterRequests:
             headers=dispatcher_headers,
         )
 
-        # Пытаемся взять в работу (первый мастер)
         response = await client.post(
             f"/api/v1/master/requests/{request_id}/take", headers=master_headers
         )
 
-        assert response.status_code == 404  # или 403 - зависит от реализации
+        assert response.status_code == 404
 
     async def test_take_to_work_wrong_status(
         self,
@@ -224,30 +191,21 @@ class TestMasterRequests:
         dispatcher_headers: dict,
         valid_request_data: dict,
     ):
-        """Нельзя взять в работу заявку не в статусе assigned"""
-        # Создаем заявку (статус new)
-        create_resp = await client.post(
-            "/api/v1/requests/", json=valid_request_data, headers=dispatcher_headers
-        )
+        create_resp = await client.post("/api/v1/requests/", json=valid_request_data)
         request_id = create_resp.json()["id"]
 
-        # Пытаемся взять в работу (без назначения)
         response = await client.post(
             f"/api/v1/master/requests/{request_id}/take", headers=master_headers
         )
 
-        assert response.status_code == 404  # заявка не назначена мастеру
+        assert response.status_code == 404
 
     async def test_take_to_work_not_found(
-        self,
-        client: AsyncClient,
-        master_headers: dict,
+        self, client: AsyncClient, master_headers: dict
     ):
-        """Взятие в работу несуществующей заявки"""
         response = await client.post(
             "/api/v1/master/requests/99999/take", headers=master_headers
         )
-
         assert response.status_code == 404
 
     # ===== 3. ЗАВЕРШИТЬ ЗАЯВКУ =====
@@ -261,11 +219,7 @@ class TestMasterRequests:
         valid_request_data: dict,
         db_session: AsyncSession,
     ):
-        """Успешное завершение заявки"""
-        # Создаем, назначаем и берем в работу
-        create_resp = await client.post(
-            "/api/v1/requests/", json=valid_request_data, headers=dispatcher_headers
-        )
+        create_resp = await client.post("/api/v1/requests/", json=valid_request_data)
         request_id = create_resp.json()["id"]
         await client.post(
             f"/api/v1/requests/{request_id}/assign",
@@ -276,7 +230,6 @@ class TestMasterRequests:
             f"/api/v1/master/requests/{request_id}/take", headers=master_headers
         )
 
-        # Завершаем
         response = await client.post(
             f"/api/v1/master/requests/{request_id}/complete", headers=master_headers
         )
@@ -285,7 +238,6 @@ class TestMasterRequests:
         data = response.json()
         assert data["status"] == "done"
 
-        # Проверяем в БД
         result = await db_session.execute(
             select(Request).where(Request.id == request_id)
         )
@@ -300,11 +252,7 @@ class TestMasterRequests:
         dispatcher_headers: dict,
         valid_request_data: dict,
     ):
-        """Нельзя завершить заявку не в статусе in_progress"""
-        # Создаем и назначаем (статус assigned)
-        create_resp = await client.post(
-            "/api/v1/requests/", json=valid_request_data, headers=dispatcher_headers
-        )
+        create_resp = await client.post("/api/v1/requests/", json=valid_request_data)
         request_id = create_resp.json()["id"]
         await client.post(
             f"/api/v1/requests/{request_id}/assign",
@@ -312,12 +260,11 @@ class TestMasterRequests:
             headers=dispatcher_headers,
         )
 
-        # Пытаемся завершить
         response = await client.post(
             f"/api/v1/master/requests/{request_id}/complete", headers=master_headers
         )
 
-        assert response.status_code == 400
+        assert response.status_code == 409  # Conflict
 
     async def test_complete_request_not_mine(
         self,
@@ -328,11 +275,7 @@ class TestMasterRequests:
         dispatcher_headers: dict,
         valid_request_data: dict,
     ):
-        """Нельзя завершить чужую заявку"""
-        # Создаем, назначаем на второго мастера, он берет в работу
-        create_resp = await client.post(
-            "/api/v1/requests/", json=valid_request_data, headers=dispatcher_headers
-        )
+        create_resp = await client.post("/api/v1/requests/", json=valid_request_data)
         request_id = create_resp.json()["id"]
         await client.post(
             f"/api/v1/requests/{request_id}/assign",
@@ -343,7 +286,6 @@ class TestMasterRequests:
             f"/api/v1/master/requests/{request_id}/take", headers=second_master_headers
         )
 
-        # Первый мастер пытается завершить
         response = await client.post(
             f"/api/v1/master/requests/{request_id}/complete", headers=master_headers
         )
@@ -351,15 +293,11 @@ class TestMasterRequests:
         assert response.status_code == 404
 
     async def test_complete_request_not_found(
-        self,
-        client: AsyncClient,
-        master_headers: dict,
+        self, client: AsyncClient, master_headers: dict
     ):
-        """Завершение несуществующей заявки"""
         response = await client.post(
             "/api/v1/master/requests/99999/complete", headers=master_headers
         )
-
         assert response.status_code == 404
 
     # ===== 4. ПОЛУЧЕНИЕ КОНКРЕТНОЙ ЗАЯВКИ =====
@@ -372,11 +310,7 @@ class TestMasterRequests:
         dispatcher_headers: dict,
         valid_request_data: dict,
     ):
-        """Успешное получение деталей своей заявки"""
-        # Создаем и назначаем
-        create_resp = await client.post(
-            "/api/v1/requests/", json=valid_request_data, headers=dispatcher_headers
-        )
+        create_resp = await client.post("/api/v1/requests/", json=valid_request_data)
         request_id = create_resp.json()["id"]
         await client.post(
             f"/api/v1/requests/{request_id}/assign",
@@ -384,7 +318,6 @@ class TestMasterRequests:
             headers=dispatcher_headers,
         )
 
-        # Получаем детали
         response = await client.get(
             f"/api/v1/master/requests/{request_id}", headers=master_headers
         )
@@ -403,11 +336,7 @@ class TestMasterRequests:
         dispatcher_headers: dict,
         valid_request_data: dict,
     ):
-        """Нельзя получить детали чужой заявки"""
-        # Создаем и назначаем на второго мастера
-        create_resp = await client.post(
-            "/api/v1/requests/", json=valid_request_data, headers=dispatcher_headers
-        )
+        create_resp = await client.post("/api/v1/requests/", json=valid_request_data)
         request_id = create_resp.json()["id"]
         await client.post(
             f"/api/v1/requests/{request_id}/assign",
@@ -415,7 +344,6 @@ class TestMasterRequests:
             headers=dispatcher_headers,
         )
 
-        # Первый мастер пытается получить
         response = await client.get(
             f"/api/v1/master/requests/{request_id}", headers=master_headers
         )
@@ -423,15 +351,11 @@ class TestMasterRequests:
         assert response.status_code == 404
 
     async def test_get_my_request_not_found(
-        self,
-        client: AsyncClient,
-        master_headers: dict,
+        self, client: AsyncClient, master_headers: dict
     ):
-        """Получение несуществующей заявки"""
         response = await client.get(
             "/api/v1/master/requests/99999", headers=master_headers
         )
-
         assert response.status_code == 404
 
     # ===== 5. СТАТИСТИКА =====
@@ -444,14 +368,8 @@ class TestMasterRequests:
         dispatcher_headers: dict,
         valid_request_data: dict,
     ):
-        """Успешное получение статистики"""
-        # Создаем 4 заявки с разными статусами
-        statuses = []
-
-        # Заявка 1: new -> assigned
-        resp1 = await client.post(
-            "/api/v1/requests/", json=valid_request_data, headers=dispatcher_headers
-        )
+        # Заявка 1: assigned
+        resp1 = await client.post("/api/v1/requests/", json=valid_request_data)
         req1_id = resp1.json()["id"]
         await client.post(
             f"/api/v1/requests/{req1_id}/assign",
@@ -459,10 +377,8 @@ class TestMasterRequests:
             headers=dispatcher_headers,
         )
 
-        # Заявка 2: assigned -> in_progress
-        resp2 = await client.post(
-            "/api/v1/requests/", json=valid_request_data, headers=dispatcher_headers
-        )
+        # Заявка 2: in_progress
+        resp2 = await client.post("/api/v1/requests/", json=valid_request_data)
         req2_id = resp2.json()["id"]
         await client.post(
             f"/api/v1/requests/{req2_id}/assign",
@@ -473,10 +389,8 @@ class TestMasterRequests:
             f"/api/v1/master/requests/{req2_id}/take", headers=master_headers
         )
 
-        # Заявка 3: полный цикл до done
-        resp3 = await client.post(
-            "/api/v1/requests/", json=valid_request_data, headers=dispatcher_headers
-        )
+        # Заявка 3: done
+        resp3 = await client.post("/api/v1/requests/", json=valid_request_data)
         req3_id = resp3.json()["id"]
         await client.post(
             f"/api/v1/requests/{req3_id}/assign",
@@ -491,9 +405,7 @@ class TestMasterRequests:
         )
 
         # Заявка 4: canceled
-        resp4 = await client.post(
-            "/api/v1/requests/", json=valid_request_data, headers=dispatcher_headers
-        )
+        resp4 = await client.post("/api/v1/requests/", json=valid_request_data)
         req4_id = resp4.json()["id"]
         await client.post(
             f"/api/v1/requests/{req4_id}/assign",
@@ -504,7 +416,6 @@ class TestMasterRequests:
             f"/api/v1/requests/{req4_id}/cancel", headers=dispatcher_headers
         )
 
-        # Получаем статистику
         response = await client.get("/api/v1/master/stats", headers=master_headers)
 
         assert response.status_code == 200
@@ -516,14 +427,8 @@ class TestMasterRequests:
         assert data["canceled"] == 1
         assert data["new"] == 0
 
-    async def test_get_my_stats_empty(
-        self,
-        client: AsyncClient,
-        master_headers: dict,
-    ):
-        """Статистика когда нет заявок"""
+    async def test_get_my_stats_empty(self, client: AsyncClient, master_headers: dict):
         response = await client.get("/api/v1/master/stats", headers=master_headers)
-
         assert response.status_code == 200
         data = response.json()
         assert data["total"] == 0
@@ -543,14 +448,9 @@ class TestMasterRequests:
         dispatcher_headers: dict,
         valid_request_data: dict,
     ):
-        """Мастер не может назначать мастеров"""
-        # Создаем заявку
-        create_resp = await client.post(
-            "/api/v1/requests/", json=valid_request_data, headers=dispatcher_headers
-        )
+        create_resp = await client.post("/api/v1/requests/", json=valid_request_data)
         request_id = create_resp.json()["id"]
 
-        # Мастер пытается назначить
         response = await client.post(
             f"/api/v1/requests/{request_id}/assign",
             json={"master_id": second_master_user.id},
@@ -559,18 +459,17 @@ class TestMasterRequests:
 
         assert response.status_code == 403
 
-    async def test_master_cannot_create_request(
+    async def test_master_can_create_request(
         self,
         client: AsyncClient,
         master_headers: dict,
         valid_request_data: dict,
     ):
-        """Мастер не может создавать заявки"""
+        """Мастер может создавать заявки (публичный доступ)"""
         response = await client.post(
             "/api/v1/requests/", json=valid_request_data, headers=master_headers
         )
-
-        assert response.status_code == 403
+        assert response.status_code == 201
 
     async def test_master_can_cancel_own_request(
         self,
@@ -580,11 +479,7 @@ class TestMasterRequests:
         dispatcher_headers: dict,
         valid_request_data: dict,
     ):
-        """Мастер может отменить свою заявку"""
-        # Создаем и назначаем
-        create_resp = await client.post(
-            "/api/v1/requests/", json=valid_request_data, headers=dispatcher_headers
-        )
+        create_resp = await client.post("/api/v1/requests/", json=valid_request_data)
         request_id = create_resp.json()["id"]
         await client.post(
             f"/api/v1/requests/{request_id}/assign",
@@ -592,7 +487,6 @@ class TestMasterRequests:
             headers=dispatcher_headers,
         )
 
-        # Мастер отменяет
         response = await client.post(
             f"/api/v1/requests/{request_id}/cancel", headers=master_headers
         )
@@ -605,15 +499,10 @@ class TestMasterRequests:
         client: AsyncClient,
         master_headers: dict,
         second_master_user: User,
-        second_master_headers: dict,
         dispatcher_headers: dict,
         valid_request_data: dict,
     ):
-        """Мастер не может отменить чужую заявку"""
-        # Создаем и назначаем на второго мастера
-        create_resp = await client.post(
-            "/api/v1/requests/", json=valid_request_data, headers=dispatcher_headers
-        )
+        create_resp = await client.post("/api/v1/requests/", json=valid_request_data)
         request_id = create_resp.json()["id"]
         await client.post(
             f"/api/v1/requests/{request_id}/assign",
@@ -621,7 +510,6 @@ class TestMasterRequests:
             headers=dispatcher_headers,
         )
 
-        # Первый мастер пытается отменить
         response = await client.post(
             f"/api/v1/requests/{request_id}/cancel", headers=master_headers
         )

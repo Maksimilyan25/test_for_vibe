@@ -1,9 +1,10 @@
 # app/services/request_service.py
 from datetime import datetime, timezone
-from typing import List, Optional, Tuple
+from typing import Optional
 
 from core.exceptions import (
     BusinessLogicException,
+    ConflictException,
     ForbiddenException,
     NotFoundException,
 )
@@ -18,14 +19,9 @@ class RequestService:
     def __init__(self, db: AsyncSession):
         self.db = db
 
-    async def create_request(self, request_data: RequestCreate, user: User) -> Request:
-        """
-        Создание новой заявки
-        Доступно: только диспетчер
-        """
-        if user.role != UserRole.DISPATCHER:
-            raise ForbiddenException("Только диспетчер может создавать заявки")
-
+    async def create_request(
+        self, request_data: RequestCreate, user: User | None = None
+    ) -> Request:
         db_request = Request(
             client_name=request_data.client_name,
             phone=request_data.phone,
@@ -39,12 +35,8 @@ class RequestService:
         return db_request
 
     async def get_request(self, request_id: int, user: User) -> Request:
-        """
-        Получение заявки по ID с проверкой прав
-        """
         query = select(Request).where(Request.id == request_id)
 
-        # Мастер видит только свои заявки
         if user.role == UserRole.MASTER:
             query = query.where(Request.assigned_to == user.id)
 
@@ -59,19 +51,13 @@ class RequestService:
     async def get_requests(
         self, filters: RequestFilterParams, user: User
     ) -> tuple[list[Request], int]:
-        """
-        Получение списка заявок с фильтрацией
-        """
-        # Базовый запрос
         query = select(Request).order_by(Request.created_at.desc())
         count_query = select(func.count(Request.id))
 
-        # Фильтр по ролям
         if user.role == UserRole.MASTER:
             query = query.where(Request.assigned_to == user.id)
             count_query = count_query.where(Request.assigned_to == user.id)
 
-        # Применяем фильтры
         if filters.status:
             query = query.where(Request.status == filters.status)
             count_query = count_query.where(Request.status == filters.status)
@@ -80,14 +66,11 @@ class RequestService:
             query = query.where(Request.assigned_to == filters.master_id)
             count_query = count_query.where(Request.assigned_to == filters.master_id)
 
-        # Пагинация
         query = query.offset(filters.skip).limit(filters.limit)
 
-        # Получаем результаты
         result = await self.db.execute(query)
         requests = list(result.scalars().all())
 
-        # Получаем общее количество
         count_result = await self.db.execute(count_query)
         total = count_result.scalar() or 0
 
@@ -96,114 +79,129 @@ class RequestService:
     async def assign_master(
         self, request_id: int, master_id: int, user: User
     ) -> Request:
-        """
-        Назначить мастера на заявку
-        Доступно: только диспетчер
-        """
         if user.role != UserRole.DISPATCHER:
             raise ForbiddenException("Только диспетчер может назначать мастеров")
 
-        # Получаем заявку
-        request = await self._get_request_by_id(request_id)
-        if not request:
-            raise NotFoundException("Заявка не найдена")
+        async with self.db.begin_nested():
+            query = select(Request).where(Request.id == request_id).with_for_update()
+            result = await self.db.execute(query)
+            request = result.scalar_one_or_none()
 
-        # Проверяем статус
-        if request.status != RequestStatus.NEW:
-            raise BusinessLogicException(
-                f"Нельзя назначить мастера на заявку со статусом {request.status.value}"
-            )
+            if not request:
+                raise NotFoundException("Заявка не найдена")
 
-        # Проверяем, что мастер существует
-        master = await self._get_master_by_id(master_id)
-        if not master:
-            raise NotFoundException("Мастер не найден")
+            if request.status != RequestStatus.NEW:
+                raise ConflictException(
+                    f"Заявка уже {request.status.value}, назначение невозможно"
+                )
 
-        # Назначаем мастера
-        request.assigned_to = master_id
-        request.status = RequestStatus.ASSIGNED
-        request.updated_at = datetime.now(timezone.utc)
+            master = await self._get_master_by_id(master_id)
+            if not master:
+                raise NotFoundException("Мастер не найден")
+
+            request.assigned_to = master_id
+            request.status = RequestStatus.ASSIGNED
+            request.updated_at = datetime.now(timezone.utc)
 
         await self.db.commit()
         await self.db.refresh(request)
         return request
 
     async def cancel_request(self, request_id: int, user: User) -> Request:
-        """
-        Отменить заявку
-        Диспетчер может отменить любую, мастер - только свою
-        """
-        request = await self.get_request(request_id, user)
-
-        # Проверяем возможность отмены
-        if request.status in [RequestStatus.DONE, RequestStatus.CANCELED]:
-            raise BusinessLogicException(
-                f"Нельзя отменить заявку со статусом {request.status.value}"
+        if user.role == UserRole.MASTER:
+            check_query = select(Request).where(
+                and_(Request.id == request_id, Request.assigned_to == user.id)
             )
+            check_result = await self.db.execute(check_query)
+            if not check_result.scalar_one_or_none():
+                raise NotFoundException("Заявка не найдена")
 
-        # Отменяем заявку
-        request.status = RequestStatus.CANCELED
-        request.updated_at = datetime.now(timezone.utc)
+        async with self.db.begin_nested():
+            query = select(Request).where(Request.id == request_id).with_for_update()
+            result = await self.db.execute(query)
+            request = result.scalar_one_or_none()
+
+            if not request:
+                raise NotFoundException("Заявка не найдена")
+
+            if user.role == UserRole.MASTER and request.assigned_to != user.id:
+                raise ForbiddenException("Можно отменять только свои заявки")
+
+            if request.status in [
+                RequestStatus.DONE,
+                RequestStatus.CANCELED,
+                RequestStatus.IN_PROGRESS,
+            ]:
+                raise ConflictException(
+                    f"Нельзя отменить заявку со статусом {request.status.value}"
+                )
+
+            request.status = RequestStatus.CANCELED
+            request.updated_at = datetime.now(timezone.utc)
 
         await self.db.commit()
         await self.db.refresh(request)
         return request
 
     async def take_to_work(self, request_id: int, user: User) -> Request:
-        """
-        Взять заявку в работу (assigned -> in_progress)
-        Доступно: только мастер, только свои заявки
-        """
         if user.role != UserRole.MASTER:
             raise ForbiddenException("Только мастер может брать заявки в работу")
 
-        request = await self.get_request(request_id, user)
-
-        if request.status != RequestStatus.ASSIGNED:
-            raise BusinessLogicException(
-                f"Нельзя взять в работу заявку со статусом {request.status.value}"
+        async with self.db.begin_nested():
+            query = (
+                select(Request)
+                .where(and_(Request.id == request_id, Request.assigned_to == user.id))
+                .with_for_update()
             )
 
-        if request.assigned_to != user.id:
-            raise ForbiddenException("Можно брать в работу только свои заявки")
+            result = await self.db.execute(query)
+            request = result.scalar_one_or_none()
 
-        request.status = RequestStatus.IN_PROGRESS
-        request.updated_at = datetime.now(timezone.utc)
+            if not request:
+                raise NotFoundException("Заявка не найдена или не назначена вам")
+
+            if request.status != RequestStatus.ASSIGNED:
+                raise ConflictException(
+                    f"Нельзя взять в работу заявку со статусом {request.status.value}"
+                )
+
+            request.status = RequestStatus.IN_PROGRESS
+            request.updated_at = datetime.now(timezone.utc)
 
         await self.db.commit()
         await self.db.refresh(request)
         return request
 
     async def complete_request(self, request_id: int, user: User) -> Request:
-        """
-        Завершить заявку (in_progress -> done)
-        Доступно: только мастер, только свои заявки
-        """
         if user.role != UserRole.MASTER:
             raise ForbiddenException("Только мастер может завершать заявки")
 
-        request = await self.get_request(request_id, user)
-
-        if request.status != RequestStatus.IN_PROGRESS:
-            raise BusinessLogicException(
-                f"Нельзя завершить заявку со статусом {request.status.value}"
+        async with self.db.begin_nested():
+            query = (
+                select(Request)
+                .where(and_(Request.id == request_id, Request.assigned_to == user.id))
+                .with_for_update()
             )
 
-        if request.assigned_to != user.id:
-            raise ForbiddenException("Можно завершать только свои заявки")
+            result = await self.db.execute(query)
+            request = result.scalar_one_or_none()
 
-        request.status = RequestStatus.DONE
-        request.updated_at = datetime.now(timezone.utc)
+            if not request:
+                raise NotFoundException("Заявка не найдена или не назначена вам")
+
+            if request.status != RequestStatus.IN_PROGRESS:
+                raise ConflictException(
+                    f"Нельзя завершить заявку со статусом {request.status.value}"
+                )
+
+            request.status = RequestStatus.DONE
+            request.updated_at = datetime.now(timezone.utc)
 
         await self.db.commit()
         await self.db.refresh(request)
         return request
 
     async def get_available_masters(self, user: User) -> list[User]:
-        """
-        Получить список всех мастеров
-        Доступно: только диспетчер
-        """
         if user.role != UserRole.DISPATCHER:
             raise ForbiddenException(
                 "Только диспетчер может просматривать список мастеров"
@@ -214,13 +212,11 @@ class RequestService:
         return list(result.scalars().all())
 
     async def _get_request_by_id(self, request_id: int) -> Request | None:
-        """Внутренний метод получения заявки без проверки прав"""
         query = select(Request).where(Request.id == request_id)
         result = await self.db.execute(query)
         return result.scalar_one_or_none()
 
     async def _get_master_by_id(self, master_id: int) -> User | None:
-        """Внутренний метод получения мастера"""
         query = select(User).where(
             and_(User.id == master_id, User.role == UserRole.MASTER)
         )

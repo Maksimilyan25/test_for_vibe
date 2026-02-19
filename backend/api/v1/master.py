@@ -19,7 +19,8 @@ router = APIRouter(prefix="/master", tags=["Мастер"])
     description="Получение списка заявок, назначенных на текущего мастера",
 )
 async def get_my_requests(
-    status: str | None = Query(
+    status: str
+    | None = Query(
         None,
         pattern="^(new|assigned|in_progress|done|canceled)$",
         description="Фильтр по статусу",

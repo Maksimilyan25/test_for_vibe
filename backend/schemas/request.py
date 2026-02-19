@@ -1,22 +1,61 @@
-# app/schemas/request.py
 from datetime import datetime
 from typing import Optional
 
 from models.request import RequestStatus
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 class RequestBase(BaseModel):
     client_name: str = Field(
         ..., min_length=1, max_length=100, description="Имя клиента"
     )
-    phone: str = Field(..., min_length=1, max_length=20, description="Телефон")
+    phone: int = Field(
+        ..., description="Телефон (только цифры)", gt=0
+    )  # Изменено на int
     address: str = Field(..., min_length=1, max_length=200, description="Адрес")
     problem_text: str = Field(..., min_length=1, description="Описание проблемы")
 
+    @field_validator("client_name")
+    @classmethod
+    def validate_client_name(cls, v: str) -> str:
+        """Просто проверяем что не пустое"""
+        if not v or not v.strip():
+            raise ValueError("Имя не может быть пустым")
+        return v.strip()
+
+    @field_validator("phone")
+    @classmethod
+    def validate_phone(cls, v: int) -> int:
+        """Проверяем что телефон положительное число"""
+        if v <= 0:
+            raise ValueError("Телефон должен быть положительным числом")
+
+        # Опционально: проверка длины номера (например, от 10 до 15 цифр)
+        phone_str = str(v)
+        if len(phone_str) < 10 or len(phone_str) > 15:
+            raise ValueError("Телефон должен содержать от 10 до 15 цифр")
+
+        return v
+
+    @field_validator("address")
+    @classmethod
+    def validate_address(cls, v: str) -> str:
+        """Просто проверяем что не пустое"""
+        if not v or not v.strip():
+            raise ValueError("Адрес не может быть пустым")
+        return v.strip()
+
+    @field_validator("problem_text")
+    @classmethod
+    def validate_problem_text(cls, v: str) -> str:
+        """Просто проверяем что не пустое"""
+        if not v or not v.strip():
+            raise ValueError("Описание проблемы не может быть пустым")
+        return v.strip()
+
 
 class RequestCreate(RequestBase):
-    """Схема для создания заявки (мастер не назначается при создании)"""
+    """Схема для создания заявки"""
 
     pass
 
@@ -25,7 +64,9 @@ class RequestUpdate(BaseModel):
     client_name: str | None = Field(
         None, min_length=1, max_length=100, description="Имя клиента"
     )
-    phone: str | None = Field(None, min_length=1, max_length=20, description="Телефон")
+    phone: int | None = Field(  # Изменено на Optional[int]
+        None, description="Телефон (только цифры)", gt=0
+    )
     address: str | None = Field(None, min_length=1, max_length=200, description="Адрес")
     problem_text: str | None = Field(
         None, min_length=1, description="Описание проблемы"
@@ -34,6 +75,21 @@ class RequestUpdate(BaseModel):
     assigned_to: int | None = Field(
         None, description="ID назначенного мастера (может быть пустым)"
     )
+
+    @field_validator("phone")
+    @classmethod
+    def validate_phone(cls, v: int | None) -> int | None:
+        """Проверяем телефон если он предоставлен"""
+        if v is not None:
+            if v <= 0:
+                raise ValueError("Телефон должен быть положительным числом")
+
+            # Опционально: проверка длины номера
+            phone_str = str(v)
+            if len(phone_str) < 10 or len(phone_str) > 15:
+                raise ValueError("Телефон должен содержать от 10 до 15 цифр")
+
+        return v
 
 
 class RequestActionAssign(BaseModel):
