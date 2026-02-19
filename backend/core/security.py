@@ -1,8 +1,9 @@
 from datetime import datetime, timedelta, timezone
-from typing import Optional, Dict, Any
+from typing import Any, Dict, Optional
+
+from core.config import settings
 from jose import JWTError, jwt
 from passlib.context import CryptContext
-from core.config import settings
 
 # Исправленный контекст с явным указанием bcrypt
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto", bcrypt__rounds=12)
@@ -22,7 +23,7 @@ def get_password_hash(password: str) -> str:
 
 
 def create_access_token(
-    data: Dict[str, Any], expires_delta: Optional[timedelta] = None
+    data: dict[str, Any], expires_delta: timedelta | None = None
 ) -> str:
     """Создание JWT токена"""
     to_encode = data.copy()
@@ -35,7 +36,7 @@ def create_access_token(
     return jwt.encode(to_encode, settings.SECRET_KEY, algorithm=ALGORITHM)
 
 
-def decode_token(token: str) -> Optional[Dict[str, Any]]:
+def decode_token(token: str) -> dict[str, Any] | None:
     """Декодирование JWT токена"""
     try:
         return jwt.decode(token, settings.SECRET_KEY, algorithms=[ALGORITHM])

@@ -1,10 +1,9 @@
-from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy import String, Enum
 import enum
-
-
 from typing import TYPE_CHECKING
+
 from core.database import Base
+from sqlalchemy import Enum, String
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 if TYPE_CHECKING:
     from models.request import Request

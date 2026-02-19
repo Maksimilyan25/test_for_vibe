@@ -1,11 +1,11 @@
-from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy import String, Text, Enum, Integer, ForeignKey, DateTime
-from sqlalchemy.sql import func
 import enum
 from datetime import datetime
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 from core.database import Base
+from sqlalchemy import DateTime, Enum, ForeignKey, Integer, String, Text
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.sql import func
 
 if TYPE_CHECKING:
     from models.user import User
@@ -31,13 +31,13 @@ class Request(Base):
         Enum(RequestStatus), nullable=False, default=RequestStatus.NEW
     )
 
-    assigned_to: Mapped[Optional[int]] = mapped_column(
+    assigned_to: Mapped[int | None] = mapped_column(
         Integer, ForeignKey("users.id"), nullable=True
     )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
-    updated_at: Mapped[Optional[datetime]] = mapped_column(
+    updated_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), onupdate=func.now(), nullable=True
     )
 

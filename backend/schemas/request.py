@@ -1,8 +1,9 @@
 # app/schemas/request.py
-from pydantic import BaseModel, Field, ConfigDict
 from datetime import datetime
 from typing import Optional
+
 from models.request import RequestStatus
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class RequestBase(BaseModel):
@@ -21,20 +22,16 @@ class RequestCreate(RequestBase):
 
 
 class RequestUpdate(BaseModel):
-    client_name: Optional[str] = Field(
+    client_name: str | None = Field(
         None, min_length=1, max_length=100, description="Имя клиента"
     )
-    phone: Optional[str] = Field(
-        None, min_length=1, max_length=20, description="Телефон"
-    )
-    address: Optional[str] = Field(
-        None, min_length=1, max_length=200, description="Адрес"
-    )
-    problem_text: Optional[str] = Field(
+    phone: str | None = Field(None, min_length=1, max_length=20, description="Телефон")
+    address: str | None = Field(None, min_length=1, max_length=200, description="Адрес")
+    problem_text: str | None = Field(
         None, min_length=1, description="Описание проблемы"
     )
-    status: Optional[RequestStatus] = Field(None, description="Статус заявки")
-    assigned_to: Optional[int] = Field(
+    status: RequestStatus | None = Field(None, description="Статус заявки")
+    assigned_to: int | None = Field(
         None, description="ID назначенного мастера (может быть пустым)"
     )
 
@@ -46,29 +43,27 @@ class RequestActionAssign(BaseModel):
 class RequestInDB(RequestBase):
     id: int = Field(..., description="ID заявки")
     status: RequestStatus = Field(..., description="Статус заявки")
-    assigned_to: Optional[int] = Field(
+    assigned_to: int | None = Field(
         None, description="ID назначенного мастера (null если мастер не назначен)"
     )
     created_at: datetime = Field(..., description="Дата создания")
-    updated_at: Optional[datetime] = Field(
-        None, description="Дата последнего обновления"
-    )
+    updated_at: datetime | None = Field(None, description="Дата последнего обновления")
 
     model_config = ConfigDict(from_attributes=True)
 
 
 class RequestWithMaster(RequestInDB):
-    assigned_master_name: Optional[str] = Field(
+    assigned_master_name: str | None = Field(
         None, description="Имя назначенного мастера (null если мастер не назначен)"
     )
-    assigned_master_username: Optional[str] = Field(
+    assigned_master_username: str | None = Field(
         None, description="Username назначенного мастера (null если мастер не назначен)"
     )
 
 
 class RequestFilterParams(BaseModel):
-    status: Optional[RequestStatus] = Field(None, description="Фильтр по статусу")
-    master_id: Optional[int] = Field(
+    status: RequestStatus | None = Field(None, description="Фильтр по статусу")
+    master_id: int | None = Field(
         None, description="Фильтр по мастеру (показывает заявки только этого мастера)"
     )
     skip: int = Field(0, ge=0, description="Сколько пропустить")

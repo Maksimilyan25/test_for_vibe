@@ -1,11 +1,10 @@
 # tests/test_dispatcher.py
 import pytest
 from httpx import AsyncClient
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func
-
 from models.request import Request, RequestStatus
 from models.user import User, UserRole
+from sqlalchemy import func, select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 
 @pytest.mark.asyncio

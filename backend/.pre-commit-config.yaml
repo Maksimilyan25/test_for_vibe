@@ -1,4 +1,4 @@
-exclude: '^(docs|tests|migrations|benchmarks|notebooks)/'
+exclude: '^(docs/|tests/|migrations/|benchmarks/|notebooks/|backend/tests/|backend/migrations/)'
 default_stages: [pre-commit]
 
 repos:
@@ -25,7 +25,7 @@ repos:
       - id: black
         language_version: python3.12
         args: ["--line-length=88"]
-        files: '^src/'
+        files: '^backend/.*\.py$'
 
   # isort — сортировка импортов
   - repo: https://github.com/PyCQA/isort
@@ -33,9 +33,9 @@ repos:
     hooks:
       - id: isort
         args: ["--profile", "black", "--line-length=88"]
-        files: '^src/'
+        files: '^backend/.*\.py$'
 
-  # flake8 — линтер кода (НАСТРОЕННЫЙ)
+  # flake8 — линтер кода
   - repo: https://github.com/PyCQA/flake8
     rev: 6.1.0
     hooks:
@@ -47,9 +47,8 @@ repos:
         args: [
           "--max-line-length=88",
           "--extend-ignore=E501,F401,E266,F841,B008,SIM102,SIM910,F821",
-          "--exclude=src/communities/models.py"
         ]
-        files: '^src/'
+        files: '^backend/.*\.py$'
         language_version: python3.12
 
   # pyupgrade — обновление синтаксиса
@@ -58,17 +57,4 @@ repos:
     hooks:
       - id: pyupgrade
         args: ["--py312-plus"]
-        files: '^src/'
-
-  # mypy — проверка типов (ВРЕМЕННО ОТКЛЮЧЕН)
-  # - repo: https://github.com/pre-commit/mirrors-mypy
-  #   rev: v1.8.0
-  #   hooks:
-  #     - id: mypy
-  #       additional_dependencies: []
-  #       files: '^src/'
-  #       args: [
-  #         "--ignore-missing-imports",
-  #         "--disallow-untyped-defs",
-  #         "--warn-unused-ignores"
-  #       ]
+        files: '^backend/.*\.py$'

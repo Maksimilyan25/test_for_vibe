@@ -1,13 +1,10 @@
+from core.database import get_db
+from core.security import decode_token
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
-from sqlalchemy.ext.asyncio import AsyncSession
-
-
-from core.database import get_db
-from services.user_service import UserService
 from models.user import User, UserRole
-from core.security import decode_token
-
+from services.user_service import UserService
+from sqlalchemy.ext.asyncio import AsyncSession
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
 

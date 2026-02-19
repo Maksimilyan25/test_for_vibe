@@ -1,5 +1,5 @@
-from pydantic import BaseModel, ConfigDict, Field
 from models.user import UserRole
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class UserBase(BaseModel):

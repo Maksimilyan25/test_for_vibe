@@ -1,29 +1,26 @@
-from fastapi import APIRouter, Depends, Query, status
-from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List, Optional
 
-from core.database import get_db
-from schemas.request import (
-    RequestInDB,
-    RequestWithMaster,
-    RequestFilterParams,
-)
-from services.request_service import RequestService
 from api.dependencies import get_current_master
-from models.user import User
+from core.database import get_db
+from fastapi import APIRouter, Depends, Query
 from models.request import RequestStatus
+from models.user import User
+from schemas.request import RequestFilterParams, RequestInDB, RequestWithMaster
+from services.request_service import RequestService
+from sqlalchemy.ext.asyncio import AsyncSession
 
 router = APIRouter(prefix="/master", tags=["Мастер"])
 
 
 @router.get(
     "/requests",
-    response_model=List[RequestWithMaster],
+    response_model=list[RequestWithMaster],
     summary="Список моих заявок",
     description="Получение списка заявок, назначенных на текущего мастера",
 )
 async def get_my_requests(
-    status: Optional[str] = Query(
+    status: str
+    | None = Query(
         None,
         pattern="^(new|assigned|in_progress|done|canceled)$",
         description="Фильтр по статусу",

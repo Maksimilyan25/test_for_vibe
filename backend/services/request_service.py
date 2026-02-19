@@ -1,17 +1,17 @@
 # app/services/request_service.py
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, and_, func
-from typing import Optional, List, Tuple
 from datetime import datetime, timezone
+from typing import List, Optional, Tuple
 
+from core.exceptions import (
+    BusinessLogicException,
+    ForbiddenException,
+    NotFoundException,
+)
 from models.request import Request, RequestStatus
 from models.user import User, UserRole
 from schemas.request import RequestCreate, RequestFilterParams
-from core.exceptions import (
-    NotFoundException,
-    BusinessLogicException,
-    ForbiddenException,
-)
+from sqlalchemy import and_, func, select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 
 class RequestService:
@@ -58,7 +58,7 @@ class RequestService:
 
     async def get_requests(
         self, filters: RequestFilterParams, user: User
-    ) -> Tuple[List[Request], int]:
+    ) -> tuple[list[Request], int]:
         """
         Получение списка заявок с фильтрацией
         """
@@ -199,7 +199,7 @@ class RequestService:
         await self.db.refresh(request)
         return request
 
-    async def get_available_masters(self, user: User) -> List[User]:
+    async def get_available_masters(self, user: User) -> list[User]:
         """
         Получить список всех мастеров
         Доступно: только диспетчер
@@ -213,13 +213,13 @@ class RequestService:
         result = await self.db.execute(query)
         return list(result.scalars().all())
 
-    async def _get_request_by_id(self, request_id: int) -> Optional[Request]:
+    async def _get_request_by_id(self, request_id: int) -> Request | None:
         """Внутренний метод получения заявки без проверки прав"""
         query = select(Request).where(Request.id == request_id)
         result = await self.db.execute(query)
         return result.scalar_one_or_none()
 
-    async def _get_master_by_id(self, master_id: int) -> Optional[User]:
+    async def _get_master_by_id(self, master_id: int) -> User | None:
         """Внутренний метод получения мастера"""
         query = select(User).where(
             and_(User.id == master_id, User.role == UserRole.MASTER)

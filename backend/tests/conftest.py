@@ -1,19 +1,19 @@
 # tests/conftest.py (дополнение)
-import pytest
-import pytest_asyncio
 import asyncio
 from typing import AsyncGenerator, Dict
-from httpx import AsyncClient, ASGITransport
-from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
-from sqlalchemy.pool import NullPool
 
-from main import app
-from core.database import Base, get_db
+import pytest
+import pytest_asyncio
 from core.config import settings
+from core.database import Base, get_db
 from core.security import create_access_token
+from httpx import ASGITransport, AsyncClient
+from main import app
 from models.user import User, UserRole
-from services.user_service import UserService
 from schemas.user import UserCreate
+from services.user_service import UserService
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.pool import NullPool
 
 # Используем test database
 TEST_DATABASE_URL = "sqlite+aiosqlite:///./test.db"

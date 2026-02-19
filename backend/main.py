@@ -1,8 +1,7 @@
+from api.v1 import auth, dispatcher, master, requests
+from core.config import settings
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-
-from core.config import settings
-from api.v1 import auth, requests, dispatcher, master
 
 app = FastAPI(title=settings.PROJECT_NAME, version=settings.VERSION)
 
@@ -19,6 +18,7 @@ app.add_middleware(
 app.include_router(auth.router, prefix=settings.API_V1_PREFIX)
 app.include_router(requests.router, prefix=settings.API_V1_PREFIX)
 app.include_router(master.router, prefix=settings.API_V1_PREFIX)
+
 
 @app.get("/")
 async def root():

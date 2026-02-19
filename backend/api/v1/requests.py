@@ -1,19 +1,19 @@
-from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List, Optional
 
+from api.dependencies import get_current_dispatcher, get_current_user
 from core.database import get_db
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+from models.user import User, UserRole
 from schemas.request import (
+    RequestActionAssign,
     RequestCreate,
+    RequestFilterParams,
     RequestInDB,
     RequestWithMaster,
-    RequestFilterParams,
-    RequestActionAssign,
 )
 from schemas.user import UserResponse
 from services.request_service import RequestService
-from api.dependencies import get_current_user, get_current_dispatcher
-from models.user import User, UserRole
+from sqlalchemy.ext.asyncio import AsyncSession
 
 router = APIRouter(prefix="/requests", tags=["Заявки"])
 
@@ -38,19 +38,19 @@ async def create_request(
 
 @router.get(
     "/",
-    response_model=List[RequestWithMaster],
+    response_model=list[RequestWithMaster],
     summary="Список заявок",
     description="Получение списка заявок с фильтрацией. Диспетчер видит все, мастер - только свои.",
 )
 async def get_requests(
-    status: Optional[str] = Query(
+    status: str
+    | None = Query(
         None,
         pattern="^(new|assigned|in_progress|done|canceled)$",
         description="Фильтр по статусу",
     ),
-    master_id: Optional[int] = Query(
-        None, description="Фильтр по мастеру (только для диспетчера)"
-    ),
+    master_id: int
+    | None = Query(None, description="Фильтр по мастеру (только для диспетчера)"),
     skip: int = Query(0, ge=0, description="Сколько пропустить"),
     limit: int = Query(100, ge=1, le=100, description="Сколько вернуть"),
     db: AsyncSession = Depends(get_db),
@@ -169,7 +169,7 @@ async def cancel_request(
 
 @router.get(
     "/masters/available",
-    response_model=List[UserResponse],
+    response_model=list[UserResponse],
     summary="Список мастеров",
     description="Получить список всех мастеров для назначения. Доступно только диспетчеру.",
 )

@@ -1,12 +1,11 @@
+from api.dependencies import get_current_user
+from core.database import SessionDep
+from core.security import create_access_token
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
-
-from core.database import SessionDep
-from schemas.user import UserCreate, UserResponse, Token
-from services.user_service import UserService
-from api.dependencies import get_current_user
 from models.user import User
-from core.security import create_access_token
+from schemas.user import Token, UserCreate, UserResponse
+from services.user_service import UserService
 
 router = APIRouter(prefix="/auth", tags=["Аутентификация и авторизация"])
 
